@@ -14,6 +14,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -29,6 +30,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+
+        externalNativeBuild {
+        cmake {
+            // Arguments to pass to the NDK build system.
+            // See https://developer.android.com/ndk/guides/ndk-build for details.
+           arguments.add("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
+        }
+    }
     }
 
     buildTypes {
@@ -47,4 +57,9 @@ flutter {
 dependencies {
   implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
   implementation("com.google.firebase:firebase-analytics")
+  implementation ("com.google.firebase:firebase-messaging:23.4.1")
+  implementation ("androidx.multidex:multidex:2.0.1")
+  coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.1.4")
+  implementation ("androidx.window:window:1.0.0")
+  implementation ("androidx.window:window-java:1.0.0")
 }

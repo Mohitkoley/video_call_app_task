@@ -1,12 +1,25 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
+import 'package:video_calling/core/service_locator/di.dart';
 import 'package:video_calling/firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    configureDependencies();
+    runApp(const MyApp());
+  }, catchUnhandledExceptions);
+}
 
-  runApp(const MyApp());
+void catchUnhandledExceptions(Object error, StackTrace? stack) {
+  FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+  debugPrintStack(stackTrace: stack, label: error.toString());
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +28,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
