@@ -49,6 +49,7 @@ dependencies:
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
   uuid: ^4.5.1
+  agora_rtc_engine: ^6.5.3
 
 dev_dependencies:
   auto_route_generator: ^10.2.4

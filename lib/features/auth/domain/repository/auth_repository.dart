@@ -11,5 +11,6 @@ abstract class AuthRepository {
   );
   Future<Either<Failure, UserEntity>> signIn(String email, String password);
   Future<UserEntity?> getCurrentUser();
+  Stream<Either<Failure, List<UserEntity>>> getAllUsers();
   Future<void> signOut();
 }

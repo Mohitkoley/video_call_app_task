@@ -49,5 +49,7 @@
 	<string>Camera required for video call</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone required for audio call</string>
+	<key>ReplayKitUsageDescription</key>
+	<string>Screen sharing requires access to this app</string>
 </dict>
 </plist>

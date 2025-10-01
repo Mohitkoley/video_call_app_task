@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:injectable/injectable.dart';
 import 'package:video_calling/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -8,6 +9,7 @@ abstract class AuthRemoteDataSource {
   Future<void> signOut();
 }
 
+@LazySingleton(as: AuthRemoteDataSource)
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final firebase.FirebaseAuth auth;
 

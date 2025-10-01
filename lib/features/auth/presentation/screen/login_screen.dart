@@ -50,6 +50,9 @@ class _LoginScreenState extends State<LoginScreen> with ValidatorMixin {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Login Successful')));
+            context.router.replace(
+              UsersListRoute(currentUserId: state.user.uid),
+            );
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(
               context,
@@ -82,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> with ValidatorMixin {
                   const SizedBox(height: 24),
                   CommonButton.buildElevatedButton(
                     onPressed: () {
+                      if (state is AuthLoading) return;
                       if (_formKey.currentState!.validate()) {
                         final email = emailController.text;
                         final password = passwordController.text;
