@@ -93,18 +93,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  FutureOr<void> _onLoadUsers(LoadUsers event, Emitter<AuthState> emit) {
+  FutureOr<void> _onLoadUsers(LoadUsers event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
-    final stream = getAllUsersUseCase();
-    stream.listen((result) {
-      result.fold(
-        ifLeft: (Failure value) {
-          emit(AuthFailure(value.message));
-        },
-        ifRight: (List<UserEntity> users) {
-          emit(UsersLoaded(users));
-        },
-      );
-    });
+    await emit.forEach(
+      getAllUsersUseCase(), // returns Stream<Either<Failure, List<UserEntity>>>
+      onData: (result) => result.fold(
+        ifLeft: (failure) => AuthFailure(failure.message),
+        ifRight: (users) => UsersLoaded(users),
+      ),
+      onError: (_, __) => const AuthFailure("Unexpected error"),
+    );
   }
 }

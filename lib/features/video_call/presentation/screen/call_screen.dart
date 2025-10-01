@@ -27,7 +27,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _screenSharing = false;
   bool _usingFrontCamera = true;
 
-  static const int localUid = 0; // your main camera track
+  static const int localUid = 0; // main camera track
   static const int screenShareUid = 99; // unique UID for screen sharing
 
   @override
