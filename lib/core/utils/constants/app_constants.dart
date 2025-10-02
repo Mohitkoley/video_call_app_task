@@ -2,6 +2,6 @@
 class AppConstants {
   static const agoraAppId = "cb506508838341bf97edbaef132dd695";
   static const tempToken =
-      "007eJxTYFByNP1ceDt78avTiWXKSje3B2/e+WbW0Qc/e5U66/pjXP8qMCQnmRqYmRpYWBhbGJsYJqVZmqemJCWmphkaG6WkmFmanhW8l9EQyMjQGhHEzMgAgSA+L0NaTmlJSWpRfGJ6flEiAwMAUKAlkA==";
+      "007eJxTYJjz9guniVL4YZlbsnH9Jov2Jvw/8fnnE78i8auOPtfZC7IUGJKTTA3MTA0sLIwtjE0Mk9IszVNTkhJT0wyNjVJSzCxNX6rdy2gIZGQouJDGysgAgSA+L0NaTmlJSWpRfGJ6flEiAwMA4nkknw==";
   static const channelName = "flutter_agora";
 }

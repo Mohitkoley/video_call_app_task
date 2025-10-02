@@ -8,7 +8,7 @@ class UserModel extends UserEntity {
     required super.email,
     required super.displayName,
     super.defaultChannel,
-    required super.isOnline,
+    required super.isHost,
   });
 
   factory UserModel.fromFirebase(String uid, Map<String, dynamic> json) {
@@ -17,7 +17,7 @@ class UserModel extends UserEntity {
       email: json['email'] ?? '',
       displayName: json['displayName'] ?? '',
       defaultChannel: json['defaultChannel'],
-      isOnline: json['isOnline'] ?? false,
+      isHost: json['isHost'] ?? false,
     );
   }
 
@@ -26,7 +26,7 @@ class UserModel extends UserEntity {
       'email': email,
       'displayName': displayName,
       'defaultChannel': defaultChannel,
-      'isOnline': isOnline,
+      'isOnline': isHost,
     };
   }
 }

@@ -27,7 +27,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         email: user.email!,
         displayName: user.displayName ?? '',
         defaultChannel: 'user_${user.uid}',
-        isOnline: true,
+        isHost: false,
       );
     } else {
       return null;
@@ -46,7 +46,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       email: user.email!,
       displayName: user.displayName ?? '',
       defaultChannel: 'user_${user.uid}',
-      isOnline: true,
+      isHost: false,
     );
   }
 
@@ -62,7 +62,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       email: user.email!,
       displayName: user.displayName ?? '',
       defaultChannel: 'user_${user.uid}',
-      isOnline: true,
+      isHost: false,
     );
   }
 }

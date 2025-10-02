@@ -1,7 +1,10 @@
 // presentation/users/users_list_screen.dart
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:video_calling/core/utils/constants/app_constants.dart';
 import 'package:video_calling/features/auth/presentation/bloc/bloc/auth_bloc.dart';
 import 'package:video_calling/features/video_call/presentation/screen/call_screen.dart';
 
@@ -21,7 +24,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthBloc>().add(LoadUsers());
+      _handlePermissions();
     });
+  }
+
+  Future<void> _handlePermissions() async {
+    await [Permission.camera, Permission.microphone].request();
   }
 
   @override
@@ -35,7 +43,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
           context.read<AuthBloc>().add(
             UpdateUserEvent(
               data: {
-                "defaultChannel": "channel_${widget.currentUserId}",
+                "defaultChannel": AppConstants.channelName,
                 "isOnline": true,
               },
             ),
@@ -45,8 +53,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
             context,
             MaterialPageRoute(
               builder: (_) => CallScreen(
-                channelName: newChannel,
-                callerId: widget.currentUserId,
+                channelName: AppConstants.channelName,
+                uid: widget.currentUserId,
+                type: ClientRoleType.clientRoleBroadcaster,
                 // placeholder, no specific callee
               ),
             ),
@@ -77,8 +86,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        user.isOnline ? Icons.circle : Icons.circle_outlined,
-                        color: user.isOnline ? Colors.green : Colors.grey,
+                        user.isHost ? Icons.circle : Icons.circle_outlined,
+                        color: user.isHost ? Colors.green : Colors.grey,
                         size: 14,
                       ),
                       if (user.defaultChannel != null)
@@ -96,8 +105,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => CallScreen(
-                                  channelName: user.defaultChannel!,
-                                  callerId: widget.currentUserId,
+                                  channelName: AppConstants.channelName,
+                                  uid: widget.currentUserId,
+                                  type: ClientRoleType.clientRoleAudience,
                                 ),
                               ),
                             );

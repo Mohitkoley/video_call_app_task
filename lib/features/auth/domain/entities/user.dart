@@ -3,13 +3,13 @@ class UserEntity {
   final String email;
   final String displayName;
   final String? defaultChannel;
-  final bool isOnline;
+  final bool isHost;
 
   UserEntity({
     required this.uid,
     required this.email,
     required this.displayName,
     this.defaultChannel,
-    required this.isOnline,
+    required this.isHost,
   });
 }

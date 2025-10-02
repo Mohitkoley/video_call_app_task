@@ -1,18 +1,20 @@
 // lib/presentation/screens/call_screen.dart
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_calling/core/utils/constants/app_constants.dart';
 
+@RoutePage()
 class CallScreen extends StatefulWidget {
   final String channelName;
-  final String callerId;
-  final String? calleeId;
+  final String uid;
+  final ClientRoleType type;
   const CallScreen({
     super.key,
     required this.channelName,
-    required this.callerId,
-    this.calleeId,
+    required this.uid,
+    required this.type,
   });
 
   @override
@@ -22,89 +24,121 @@ class CallScreen extends StatefulWidget {
 class _CallScreenState extends State<CallScreen> {
   late RtcEngine _engine;
   int? _remoteUid;
+  List<int> _remoteUids = []; // Track multiple remote users
 
   bool _muted = false;
   bool _videoDisabled = false;
   bool _screenSharing = false;
   bool _usingFrontCamera = true;
-
-  static const int localUid = 0; // main camera track
-  static const int screenShareUid = 99; // unique UID for screen sharing
+  bool _isJoined = false;
 
   @override
   void initState() {
     super.initState();
-    _handlePermissions();
     _initAgora();
   }
 
-  Future<void> _handlePermissions() async {
-    await [Permission.camera, Permission.microphone].request();
-  }
-
   Future<void> _initAgora() async {
+    // Request permissions first
+    await [Permission.microphone, Permission.camera].request();
+
     _engine = createAgoraRtcEngine();
     await _engine.initialize(
       const RtcEngineContext(appId: AppConstants.agoraAppId),
     );
 
+    // Configure video encoder configuration
+    await _engine.setVideoEncoderConfiguration(
+      const VideoEncoderConfiguration(
+        dimensions: VideoDimensions(width: 640, height: 360),
+        frameRate: 60,
+        bitrate: 0,
+      ),
+    );
+
+    // Enable video
+    await _engine.enableVideo();
+
+    // Set up event handlers
     _engine.registerEventHandler(
       RtcEngineEventHandler(
-        onUserJoined: (connection, remoteUid, elapsed) {
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint('Local user joined channel: ${connection.channelId}');
           setState(() {
-            _remoteUid = remoteUid;
+            _isJoined = true;
           });
         },
-        onUserOffline: (connection, remoteUid, reason) {
-          if (_remoteUid == remoteUid) {
-            setState(() {
-              _remoteUid = null;
-            });
-          }
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          debugPrint('Remote user joined: $remoteUid');
+          setState(() {
+            _remoteUid = remoteUid;
+            _remoteUids.add(remoteUid);
+          });
+        },
+        onUserOffline:
+            (
+              RtcConnection connection,
+              int remoteUid,
+              UserOfflineReasonType reason,
+            ) {
+              debugPrint('Remote user left: $remoteUid');
+              setState(() {
+                _remoteUids.remove(remoteUid);
+                if (_remoteUid == remoteUid) {
+                  _remoteUid = _remoteUids.isNotEmpty
+                      ? _remoteUids.first
+                      : null;
+                }
+              });
+            },
+        onError: (ErrorCodeType errorCode, String message) {
+          debugPrint('Agora Error: $errorCode, $message');
         },
       ),
     );
 
-    await _engine.enableVideo();
+    // Start local preview
+    await _engine.startPreview();
+
     await _joinMainChannel();
   }
 
   Future<void> _joinMainChannel() async {
-    await _engine.joinChannelWithUserAccount(
-      token: "",
-      channelId: widget.channelName,
-      userAccount: widget.callerId, // Use callerId as userAccount
-      options: const ChannelMediaOptions(
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-        publishCameraTrack: true,
-        publishMicrophoneTrack: true,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
+    try {
+      await _engine.joinChannel(
+        token: AppConstants.tempToken,
+        channelId: widget.channelName,
+        uid: 0, // Let Agora assign UID automatically
+        options: ChannelMediaOptions(
+          autoSubscribeAudio: true,
+          autoSubscribeVideo: true,
+
+          clientRoleType: widget.type,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to join channel: $e');
+    }
   }
 
   Future<void> _startScreenShare() async {
-    await _engine.joinChannelWithUserAccountEx(
-      token: "",
-      channelId: widget.channelName,
-      userAccount: widget.callerId,
-      options: const ChannelMediaOptions(
-        autoSubscribeVideo: false,
-        autoSubscribeAudio: false,
-        publishCameraTrack: false,
-        publishMicrophoneTrack: false,
-        publishScreenCaptureAudio: true,
-        publishScreenCaptureVideo: true,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
-    setState(() => _screenSharing = true);
+    try {
+      await _engine.startScreenCapture(
+        ScreenCaptureParameters2(captureAudio: true, captureVideo: true),
+      );
+      setState(() => _screenSharing = true);
+    } catch (e) {
+      debugPrint('Failed to start screen share: $e');
+    }
   }
 
   Future<void> _stopScreenShare() async {
-    await _engine.stopScreenCapture();
-    setState(() => _screenSharing = false);
+    try {
+      await _engine.stopScreenCapture();
+      setState(() => _screenSharing = false);
+    } catch (e) {
+      debugPrint('Failed to stop screen share: $e');
+    }
   }
 
   void _onToggleMute() {
@@ -115,6 +149,13 @@ class _CallScreenState extends State<CallScreen> {
   void _onToggleVideo() {
     setState(() => _videoDisabled = !_videoDisabled);
     _engine.muteLocalVideoStream(_videoDisabled);
+
+    // Also update local preview
+    if (_videoDisabled) {
+      _engine.stopPreview();
+    } else {
+      _engine.startPreview();
+    }
   }
 
   Future<void> _onSwitchCamera() async {
@@ -139,18 +180,31 @@ class _CallScreenState extends State<CallScreen> {
         ),
       );
     } else {
-      return const Center(child: Text("Waiting for remote user..."));
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            "Waiting for remote user...",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
   }
 
   Widget _renderLocalPreview() {
     if (_videoDisabled) {
-      return const Center(child: Icon(Icons.videocam_off, size: 48));
+      return Container(
+        color: Colors.grey[800],
+        child: const Center(
+          child: Icon(Icons.videocam_off, size: 48, color: Colors.white),
+        ),
+      );
     }
     return AgoraVideoView(
       controller: VideoViewController(
         rtcEngine: _engine,
-        canvas: const VideoCanvas(uid: localUid),
+        canvas: const VideoCanvas(uid: 0),
       ),
     );
   }
@@ -158,18 +212,58 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Remote video (main view)
           _renderRemoteVideo(),
 
           // Local preview overlay
+          if (_isJoined)
+            Positioned(
+              top: 40,
+              right: 16,
+              child: Container(
+                width: 120,
+                height: 160,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: _renderLocalPreview(),
+                ),
+              ),
+            ),
+
+          // User info
           Positioned(
-            top: 24,
+            top: 40,
             left: 16,
-            child: SizedBox(
-              width: 120,
-              height: 160,
-              child: _renderLocalPreview(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Channel: ${widget.channelName}",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    "Role: ${widget.type == ClientRoleType.clientRoleBroadcaster ? 'Host' : 'Audience'}",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    "Remote Users: ${_remoteUids.length}",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -177,8 +271,12 @@ class _CallScreenState extends State<CallScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              color: Colors.black54,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(25),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -199,21 +297,22 @@ class _CallScreenState extends State<CallScreen> {
                     color: Colors.white,
                     onPressed: _onSwitchCamera,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _screenSharing
-                          ? Icons.stop_screen_share
-                          : Icons.screen_share,
+                  if (widget.type == ClientRoleType.clientRoleBroadcaster)
+                    IconButton(
+                      icon: Icon(
+                        _screenSharing
+                            ? Icons.stop_screen_share
+                            : Icons.screen_share,
+                      ),
+                      color: Colors.white,
+                      onPressed: () {
+                        if (_screenSharing) {
+                          _stopScreenShare();
+                        } else {
+                          _startScreenShare();
+                        }
+                      },
                     ),
-                    color: Colors.white,
-                    onPressed: () {
-                      if (_screenSharing) {
-                        _stopScreenShare();
-                      } else {
-                        _startScreenShare();
-                      }
-                    },
-                  ),
                   IconButton(
                     icon: const Icon(Icons.call_end, color: Colors.red),
                     onPressed: () {
@@ -225,18 +324,6 @@ class _CallScreenState extends State<CallScreen> {
               ),
             ),
           ),
-
-          // Caller and callee info
-          // Positioned(
-          //   top: 50,
-          //   left: 16,
-          //   child: Column(
-          //     children: [
-          //       Text("Caller: ${widget.callerId}"),
-          //       Text("Callee: ${widget.calleeId}"),
-          //     ],
-          //   ),
-          // ),
         ],
       ),
     );

@@ -37,7 +37,7 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         displayName: displayName,
         // defaultChannel: defaultChannel,
-        isOnline: true,
+        isHost: false,
       );
 
       await _firestore.collection('users').doc(uid).set({
@@ -155,6 +155,22 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final uid = _auth.currentUser?.uid;
       if (uid != null) {
+        //remove isHost and defaultChannel from all other users if isHost is true
+        if (data.containsKey('isHost') && data['isHost'] == true) {
+          _firestore
+              .collection('users')
+              .where('isHost', isEqualTo: true)
+              .get()
+              .then((snapshot) {
+                for (var doc in snapshot.docs) {
+                  if (doc.id != uid) {
+                    doc.reference.update({'isHost': false});
+                    doc.reference.update({'defaultChannel': null});
+                  }
+                }
+              });
+        }
+
         return _firestore
             .collection('users')
             .doc(uid)
