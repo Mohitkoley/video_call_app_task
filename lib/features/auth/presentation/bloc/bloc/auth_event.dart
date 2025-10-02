@@ -33,6 +33,15 @@ class AuthSignInEvent extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
+class UpdateUserEvent extends AuthEvent {
+  final Map<String, dynamic> data;
+
+  const UpdateUserEvent({required this.data});
+
+  @override
+  List<Object?> get props => [data];
+}
+
 class LoadUsers extends AuthEvent {}
 
 class AuthSignOutEvent extends AuthEvent {

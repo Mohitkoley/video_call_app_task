@@ -1,17 +1,18 @@
 // lib/presentation/screens/call_screen.dart
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:video_calling/core/utils/constants/app_constants.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
   final String callerId;
-  final String calleeId;
+  final String? calleeId;
   const CallScreen({
     super.key,
     required this.channelName,
     required this.callerId,
-    required this.calleeId,
+    this.calleeId,
   });
 
   @override
@@ -33,7 +34,12 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
+    _handlePermissions();
     _initAgora();
+  }
+
+  Future<void> _handlePermissions() async {
+    await [Permission.camera, Permission.microphone].request();
   }
 
   Future<void> _initAgora() async {
@@ -64,10 +70,10 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _joinMainChannel() async {
-    await _engine.joinChannelWithUserAccountEx(
+    await _engine.joinChannelWithUserAccount(
       token: "",
       channelId: widget.channelName,
-      userAccount: "user_$localUid",
+      userAccount: widget.callerId, // Use callerId as userAccount
       options: const ChannelMediaOptions(
         autoSubscribeVideo: true,
         autoSubscribeAudio: true,
@@ -82,7 +88,7 @@ class _CallScreenState extends State<CallScreen> {
     await _engine.joinChannelWithUserAccountEx(
       token: "",
       channelId: widget.channelName,
-      userAccount: "screen_share_$screenShareUid",
+      userAccount: widget.callerId,
       options: const ChannelMediaOptions(
         autoSubscribeVideo: false,
         autoSubscribeAudio: false,
@@ -152,7 +158,6 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
           _renderRemoteVideo(),
@@ -220,6 +225,18 @@ class _CallScreenState extends State<CallScreen> {
               ),
             ),
           ),
+
+          // Caller and callee info
+          // Positioned(
+          //   top: 50,
+          //   left: 16,
+          //   child: Column(
+          //     children: [
+          //       Text("Caller: ${widget.callerId}"),
+          //       Text("Callee: ${widget.calleeId}"),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

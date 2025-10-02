@@ -28,6 +28,32 @@ class _UsersListScreenState extends State<UsersListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Users")),
+      // create new call
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // create a new call with a random channel name
+          context.read<AuthBloc>().add(
+            UpdateUserEvent(
+              data: {
+                "defaultChannel": "channel_${widget.currentUserId}",
+                "isOnline": true,
+              },
+            ),
+          );
+          String newChannel = "channel_${widget.currentUserId}";
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CallScreen(
+                channelName: newChannel,
+                callerId: widget.currentUserId,
+                // placeholder, no specific callee
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is AuthLoading) {
@@ -55,20 +81,23 @@ class _UsersListScreenState extends State<UsersListScreen> {
                         color: user.isOnline ? Colors.green : Colors.grey,
                         size: 14,
                       ),
-                      if (user.isOnline)
+                      if (user.defaultChannel != null)
                         IconButton(
                           icon: const Icon(
                             Icons.video_call,
                             color: Colors.blue,
                           ),
                           onPressed: () {
+                            String sharedChannel = getSharedChannel(
+                              widget.currentUserId,
+                              user.uid,
+                            );
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => CallScreen(
-                                  channelName: user.defaultChannel,
+                                  channelName: user.defaultChannel!,
                                   callerId: widget.currentUserId,
-                                  calleeId: user.uid,
                                 ),
                               ),
                             );
@@ -86,5 +115,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
         },
       ),
     );
+  }
+
+  String getSharedChannel(String id1, String id2) {
+    List<String> ids = [id1, id2];
+    ids.sort(); // ensure order is consistent
+    return ids.join("_"); // e.g., "az8aMRfoZgcOisoNL5kY67i6nSy2_uid2"
   }
 }

@@ -10,6 +10,7 @@ import 'package:video_calling/features/auth/domain/usecases/sign_in.dart';
 import 'package:video_calling/features/auth/domain/usecases/sign_out.dart';
 import 'package:video_calling/features/auth/domain/usecases/sign_up.dart';
 import 'package:injectable/injectable.dart';
+import 'package:video_calling/features/auth/domain/usecases/update_user.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -20,9 +21,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SignUp signUpUseCase;
   final SignOut signOutUseCase;
   final GetCurrentUser getCurrentUserUseCase;
+  final UpdateUser updateUserUseCase;
   final GetAllUsers getAllUsersUseCase;
 
-  AuthBloc({
+  AuthBloc(
+    this.updateUserUseCase, {
     required this.signInUseCase,
     required this.signUpUseCase,
     required this.signOutUseCase,
@@ -33,6 +36,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignUpEvent>(_onSignUp);
     on<AuthSignOutEvent>(_onSignOut);
     on<AuthCheckStatus>(_onCheckStatus);
+    on<UpdateUserEvent>(_onUpdateUser);
     on<LoadUsers>(_onLoadUsers);
   }
 
@@ -103,5 +107,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ),
       onError: (_, __) => const AuthFailure("Unexpected error"),
     );
+  }
+
+  FutureOr<void> _onUpdateUser(UpdateUserEvent event, Emitter<AuthState> emit) {
+    try {
+      updateUserUseCase(event.data);
+    } catch (e) {
+      // Handle error if necessary
+      emit(AuthFailure(e.toString()));
+    }
   }
 }

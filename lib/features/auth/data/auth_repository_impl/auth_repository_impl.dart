@@ -36,7 +36,7 @@ class AuthRepositoryImpl implements AuthRepository {
         uid: uid,
         email: email,
         displayName: displayName,
-        defaultChannel: defaultChannel,
+        // defaultChannel: defaultChannel,
         isOnline: true,
       );
 
@@ -147,6 +147,25 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       // Handle sign out error if necessary
       rethrow;
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateUserStatus(Map<String, dynamic> data) {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        return _firestore
+            .collection('users')
+            .doc(uid)
+            .update(data)
+            .then((_) => Right<Failure, void>(null))
+            .catchError((error) => Left(ServerFailure(error.toString())));
+      } else {
+        return Future.value(Left(AuthFailure("No authenticated user")));
+      }
+    } catch (e) {
+      return Future.value(Left(ServerFailure(e.toString())));
     }
   }
 }

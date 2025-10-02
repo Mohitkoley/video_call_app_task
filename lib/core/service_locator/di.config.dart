@@ -24,6 +24,7 @@ import '../../features/auth/domain/usecases/get_current_user.dart' as _i111;
 import '../../features/auth/domain/usecases/sign_in.dart' as _i920;
 import '../../features/auth/domain/usecases/sign_out.dart' as _i568;
 import '../../features/auth/domain/usecases/sign_up.dart' as _i190;
+import '../../features/auth/domain/usecases/update_user.dart' as _i386;
 import '../../features/auth/presentation/bloc/bloc/auth_bloc.dart' as _i137;
 import '../../features/video_call/data/repository/call_repository_impl.dart'
     as _i198;
@@ -55,6 +56,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i974.FirebaseFirestore>(),
       ),
     );
+    gh.singleton<_i784.EndCall>(
+      () => _i784.EndCall(gh<_i721.CallRepository>()),
+    );
     gh.lazySingleton<_i814.StartCall>(
       () => _i814.StartCall(gh<_i721.CallRepository>()),
     );
@@ -73,17 +77,21 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i190.SignUp>(
       () => _i190.SignUp(gh<_i961.AuthRepository>()),
     );
+    gh.lazySingleton<_i386.UpdateUser>(
+      () => _i386.UpdateUser(gh<_i961.AuthRepository>()),
+    );
+    gh.lazySingleton<_i221.VideoCallBloc>(
+      () => _i221.VideoCallBloc(gh<_i814.StartCall>(), gh<_i784.EndCall>()),
+    );
     gh.lazySingleton<_i137.AuthBloc>(
       () => _i137.AuthBloc(
+        gh<_i386.UpdateUser>(),
         signInUseCase: gh<_i920.SignIn>(),
         signUpUseCase: gh<_i190.SignUp>(),
         signOutUseCase: gh<_i568.SignOut>(),
         getCurrentUserUseCase: gh<_i111.GetCurrentUser>(),
         getAllUsersUseCase: gh<_i1071.GetAllUsers>(),
       ),
-    );
-    gh.lazySingleton<_i221.VideoCallBloc>(
-      () => _i221.VideoCallBloc(gh<_i814.StartCall>(), gh<_i784.EndCall>()),
     );
     return this;
   }

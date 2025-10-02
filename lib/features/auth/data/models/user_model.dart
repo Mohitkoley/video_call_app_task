@@ -7,7 +7,7 @@ class UserModel extends UserEntity {
     required super.uid,
     required super.email,
     required super.displayName,
-    required super.defaultChannel,
+    super.defaultChannel,
     required super.isOnline,
   });
 
@@ -16,7 +16,7 @@ class UserModel extends UserEntity {
       uid: uid,
       email: json['email'] ?? '',
       displayName: json['displayName'] ?? '',
-      defaultChannel: json['defaultChannel'] ?? 'user_$uid',
+      defaultChannel: json['defaultChannel'],
       isOnline: json['isOnline'] ?? false,
     );
   }
