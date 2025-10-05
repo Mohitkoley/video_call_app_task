@@ -75,7 +75,7 @@ jobs:
         echo "keyPassword=$CM_KEY_PASSWORD" >> android/key.properties
         echo "CM_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
         echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-        echo "storeFile=app.jks" >> android/key.properties
+        echo "storeFile=../app.jks" >> android/key.properties
     
     
     - name: Build APK and ios
